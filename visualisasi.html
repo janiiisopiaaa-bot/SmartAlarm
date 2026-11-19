@@ -1,25 +1,41 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Visualisasi Alarm</title>
-  <style>
-    body { font-family: sans-serif; max-width: 360px; margin: 2rem auto; padding: 0 1rem; text-align: center; }
-    #bar { background: #ddd; border-radius: 8px; height: 24px; overflow: hidden; }
-    #isi { background: #2f4bff; height: 100%; width: 0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualisasi Alarm</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fdf2f8;color:#5b4b6b;font-family:system-ui,sans-serif}
+.box{background:#fff;width:90%;max-width:380px;padding:24px;border-radius:20px;text-align:center;box-shadow:0 4px 16px #e9d5ff}
+h1{margin:0;font-size:3rem;font-weight:400;color:#a78bfa}
+input,button{font:inherit;padding:10px 14px;border-radius:12px;border:2px solid #e9d5ff;background:#fff;color:inherit}
+button{cursor:pointer;background:#c4b5fd;border-color:#c4b5fd;color:#fff}
+button:hover{background:#a78bfa}
+.hijau{background:#a7f3d0;border-color:#a7f3d0;color:#3d6b57}
+.oranye{background:#fed7aa;border-color:#fed7aa;color:#8a5a2b}
+form{display:inline}
+p{margin:12px 0}
+.pesan{background:#e0f2fe;border-radius:12px;padding:8px}
+#ring{display:none;background:#fecdd3;border-radius:12px;padding:12px}
+a{color:#a78bfa}
+#bar{background:#e9d5ff;border-radius:12px;height:20px;overflow:hidden}
+#isi{background:#a78bfa;height:100%;width:0}
+</style>
 </head>
 <body>
+<div class="box">
   <p><a href="/">Alarm</a> | <a href="/visualisasi">Visualisasi</a></p>
-  <h1>Visualisasi Alarm</h1>
+  <h1>Visualisasi</h1>
 
-  <p>Jam alarm: <b id="infoJam"></b></p>
-  <p>Status: <b id="infoStatus"></b></p>
+  <div class="pesan">
+    <p>Jam alarm: <b id="infoJam"></b></p>
+    <p>Status: <b id="infoStatus"></b></p>
+  </div>
 
   <p>Posisi jam sekarang dalam sehari:</p>
   <div id="bar"><div id="isi"></div></div>
   <p id="sisa"></p>
+</div>
 
 <script>
 const alarm = JSON.parse(localStorage.getItem("alarm")) || { waktu: "", aktif: false };
