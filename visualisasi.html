@@ -1,40 +1,47 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="30">
-<title>Visualisasi Alarm</title>
-<style>
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fdf2f8;color:#5b4b6b;font-family:system-ui,sans-serif}
-.box{background:#fff;width:90%;max-width:560px;padding:24px;border-radius:20px;box-shadow:0 4px 16px #e9d5ff}
-h1{margin-top:0;font-weight:400;color:#a78bfa}
-.bar{position:relative;height:40px;background:#e0f2fe;border-radius:12px;margin:20px 0 6px}
-.mark{position:absolute;top:-6px;width:6px;height:52px;border-radius:3px}
-.scale{display:flex;justify-content:space-between;font-size:.8rem}
-a{color:#a78bfa}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visualisasi Alarm</title>
+  <style>
+    body { font-family: sans-serif; max-width: 360px; margin: 2rem auto; padding: 0 1rem; text-align: center; }
+    #bar { background: #ddd; border-radius: 8px; height: 24px; overflow: hidden; }
+    #isi { background: #2f4bff; height: 100%; width: 0; }
+  </style>
 </head>
 <body>
-<div class="box">
-  <h1>Posisi alarm dalam 24 jam</h1>
+  <p><a href="/">Alarm</a> | <a href="/visualisasi">Visualisasi</a></p>
+  <h1>Visualisasi Alarm</h1>
 
-  {% if persen_alarm is not none %}
-    <p>Alarm jam {{ waktualarm }} ({{ statusalarm }}), {{ sisa }}.</p>
-  {% else %}
-    <p>Belum ada alarm yang diatur.</p>
-  {% endif %}
+  <p>Jam alarm: <b id="infoJam"></b></p>
+  <p>Status: <b id="infoStatus"></b></p>
 
-  <div class="bar">
-    <div class="mark" style="left:{{ persen_now }}%;background:#a78bfa"></div>
-    {% if persen_alarm is not none %}
-      <div class="mark" style="left:{{ persen_alarm }}%;background:#fb923c"></div>
-    {% endif %}
-  </div>
-  <div class="scale"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+  <p>Posisi jam sekarang dalam sehari:</p>
+  <div id="bar"><div id="isi"></div></div>
+  <p id="sisa"></p>
 
-  <p><b style="color:#a78bfa">|</b> Sekarang &nbsp; <b style="color:#fb923c">|</b> Alarm</p>
-  <a href="/">&larr; Kembali ke alarm</a>
-</div>
+<script>
+const alarm = JSON.parse(localStorage.getItem("alarm")) || { waktu: "", aktif: false };
+
+document.getElementById("infoJam").textContent = alarm.waktu || "Belum diatur";
+document.getElementById("infoStatus").textContent = alarm.aktif ? "Aktif" : "Mati";
+
+function perbarui() {
+  const now = new Date();
+  const menitSekarang = now.getHours() * 60 + now.getMinutes();
+  document.getElementById("isi").style.width = (menitSekarang / 1440 * 100) + "%";
+
+  if (alarm.waktu) {
+    const [h, m] = alarm.waktu.split(":").map(Number);
+    let selisih = h * 60 + m - menitSekarang;
+    if (selisih < 0) selisih += 1440;   // alarm besok
+    document.getElementById("sisa").textContent =
+      "Alarm berbunyi " + Math.floor(selisih / 60) + " jam " + (selisih % 60) + " menit lagi";
+  }
+}
+perbarui();
+setInterval(perbarui, 30000);
+</script>
 </body>
 </html>

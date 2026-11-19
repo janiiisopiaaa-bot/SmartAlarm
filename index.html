@@ -1,80 +1,98 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Smart Alarm</title>
-<style>
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fdf2f8;color:#5b4b6b;font-family:system-ui,sans-serif}
-.box{background:#fff;width:90%;max-width:380px;padding:24px;border-radius:20px;text-align:center;box-shadow:0 4px 16px #e9d5ff}
-h1{margin:0;font-size:3rem;font-weight:400;color:#a78bfa}
-input,button{font:inherit;padding:10px 14px;border-radius:12px;border:2px solid #e9d5ff;background:#fff;color:inherit}
-button{cursor:pointer;background:#c4b5fd;border-color:#c4b5fd;color:#fff}
-button:hover{background:#a78bfa}
-.hijau{background:#a7f3d0;border-color:#a7f3d0;color:#3d6b57}
-.oranye{background:#fed7aa;border-color:#fed7aa;color:#8a5a2b}
-form{display:inline}
-p{margin:12px 0}
-.pesan{background:#e0f2fe;border-radius:12px;padding:8px}
-#ring{display:none;background:#fecdd3;border-radius:12px;padding:12px}
-a{color:#a78bfa}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Alarm</title>
+  <style>
+    body { font-family: sans-serif; max-width: 360px; margin: 2rem auto; padding: 0 1rem; text-align: center; }
+    #jam { font-size: 3rem; font-weight: bold; }
+    input, button { font-size: 1rem; padding: .6rem; margin: .25rem; }
+    #bunyi { background: #d93f3f; color: white; padding: 1rem; border-radius: 8px; display: none; }
+  </style>
 </head>
 <body>
-<div class="box">
-  <h1 id="jam">{{ jam }}</h1>
+  <p><a href="/">Alarm</a> | <a href="/visualisasi">Visualisasi</a></p>
+  <h1>Smart Alarm</h1>
+  <div id="jam">--:--:--</div>
 
-  {% if pesan %}<p class="pesan">{{ pesan }}</p>{% endif %}
-
-  <form action="/atur" method="post">
-    <input type="time" name="waktu" required>
-    <button>Atur alarm</button>
-  </form>
-
-  <p>Jam alarm: <b>{{ waktualarm }}</b><br>Status: <b>{{ statusalarm }}</b></p>
-
-  <p>
-    {% if statusalarm == "Aktif" %}
-      <form action="/nonaktif" method="post"><button class="hijau">Nonaktifkan</button></form>
-    {% else %}
-      <form action="/aktif" method="post"><button class="hijau">Aktifkan</button></form>
-    {% endif %}
-    <form action="/tes" method="post"><button class="oranye">Tes bunyi</button></form>
-  </p>
-
-  <div id="ring">
-    <p><b>Alarm berbunyi!</b></p>
-    <form action="/nonaktif" method="post"><button>Matikan</button></form>
+  <div id="bunyi">
+    Alarm berbunyi!<br>
+    <button onclick="hentikan()">Hentikan</button>
   </div>
 
-  <p><a href="/visualisasi">Lihat visualisasi</a></p>
-</div>
+  <p>
+    <input type="time" id="waktu">
+    <button onclick="atur()">Atur alarm</button>
+  </p>
 
-<!-- JavaScript hanya untuk 2 hal: memutar suara dan memperbarui jam. Keputusan bunyi dari Python. -->
+  <p>Jam alarm: <b id="infoJam"></b></p>
+  <p>Status: <b id="infoStatus"></b></p>
+
+  <button onclick="toggle()">Aktifkan / Nonaktifkan</button>
+  <button onclick="bunyikan(3)">Tes bunyi</button>
+
 <script>
-let audio;
-function beep(ms) {
-  audio = audio || new AudioContext();
-  const osc = audio.createOscillator();
-  osc.frequency.value = 2000;
-  osc.connect(audio.destination);
-  osc.start();
-  osc.stop(audio.currentTime + ms / 1000);
+// Data alarm disimpan di browser (localStorage)
+let alarm = JSON.parse(localStorage.getItem("alarm")) || { waktu: "", aktif: false };
+let audio, timer, sudahBunyi = "";
+
+function simpan() {
+  localStorage.setItem("alarm", JSON.stringify(alarm));
+  tampil();
 }
 
-// Browser butuh satu klik sebelum boleh bunyi
-document.addEventListener("click", () => beep(1), { once: true });
+function tampil() {
+  document.getElementById("infoJam").textContent = alarm.waktu || "Belum diatur";
+  document.getElementById("infoStatus").textContent = alarm.aktif ? "Aktif" : "Mati";
+  document.getElementById("waktu").value = alarm.waktu;
+}
 
-{% if tes %}beep(1500);{% endif %}
+function atur() {
+  alarm.waktu = document.getElementById("waktu").value;
+  simpan();
+}
 
-setInterval(async () => {
-  const data = await (await fetch("/cek")).json();
-  document.getElementById("jam").textContent = data.jam;
-  if (data.bunyi) {
-    document.getElementById("ring").style.display = "block";
-    beep(400);
+function toggle() {
+  if (!alarm.waktu) return alert("Atur jam alarm dulu!");
+  alarm.aktif = !alarm.aktif;
+  simpan();
+}
+
+// Pengganti winsound.Beep: bunyi lewat browser
+function bunyikan(detik) {
+  hentikan();
+  audio = audio || new AudioContext();
+  document.getElementById("bunyi").style.display = "block";
+  let hitung = 0;
+  timer = setInterval(() => {
+    const osc = audio.createOscillator();
+    osc.frequency.value = 1000;
+    osc.connect(audio.destination);
+    osc.start();
+    osc.stop(audio.currentTime + 0.4);
+    if (++hitung >= detik * 1.4) hentikan();
+  }, 700);
+}
+
+function hentikan() {
+  clearInterval(timer);
+  document.getElementById("bunyi").style.display = "none";
+}
+
+// Cek tiap detik: tampilkan jam & bunyikan alarm jika waktunya sama
+setInterval(() => {
+  const s = new Date().toTimeString().slice(0, 8);   // "HH:MM:SS"
+  const hhmm = s.slice(0, 5);
+  document.getElementById("jam").textContent = s;
+
+  if (alarm.aktif && alarm.waktu === hhmm && sudahBunyi !== hhmm) {
+    sudahBunyi = hhmm;
+    bunyikan(30);
   }
 }, 1000);
+
+tampil();
 </script>
 </body>
 </html>
